@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot AI Của Tôi</title>
+    <title>Chatbot Offline Của Tôi</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
         #chat-container { width: 100%; max-width: 500px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
@@ -13,74 +13,64 @@
         .bot-msg { background-color: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
         #input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: #fff; }
         #user-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 15px; }
-        #send-btn { background-color: #007bff; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        #send-btn:hover { background-color: #0056b3; }
+        #send-btn { background-color: #28a745; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        #send-btn:hover { background-color: #218838; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
     <div id="chat-box">
-        <div class="message bot-msg">Chào bạn! Trang web này cần API Key để hoạt động. Xin hãy đảm bảo bạn đã nhập Key.</div>
+        <div class="message bot-msg">Chào bạn! Tôi là Chatbot Offline. Tôi không dùng mạng và không cần API. Hãy nói gì đó đi!</div>
     </div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="Nhập câu hỏi của bạn..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeypress="handleKeyPress(event)">
         <button id="send-btn" onclick="sendMessage()">Gửi</button>
     </div>
 </div>
 
 <script>
-    // Cơ chế lưu và hỏi API Key an toàn
-    let API_KEY = localStorage.getItem("gemini_api_key");
-    if (!API_KEY) {
-        API_KEY = prompt("Vui lòng nhập Google Gemini API Key của bạn để sử dụng:");
-        if (API_KEY) {
-            localStorage.setItem("gemini_api_key", API_KEY);
-        } else {
-            alert("Bạn chưa nhập API Key! Trang web sẽ không thể trả lời.");
+    // BỘ NÃO CỦA AI: Bạn có thể tự thêm vô số từ khóa và câu trả lời vào đây
+    const botBrain = {
+        "chào": "Chào bạn nha! Hôm nay bạn thế nào?",
+        "tên là gì": "Tôi là Chatbot do chính bạn tạo ra chạy bằng JavaScript.",
+        "thời tiết": "Tôi chạy offline nên không xem được thời tiết bên ngoài đâu.",
+        "buồn": "Đừng buồn nhé, nghe một bản nhạc sẽ làm bạn thấy khá hơn đấy.",
+        "ai tạo ra": "Tôi được tạo ra bởi bạn, ngay trên chính tệp HTML này.",
+        "làm gì": "Tôi đang ngồi đây trò chuyện và chờ câu hỏi từ bạn.",
+        "cảm ơn": "Không có gì, rất vui được giúp bạn!",
+        "tạm biệt": "Tạm biệt nhé! Hẹn gặp lại."
+    };
+
+    function getBotResponse(inputText) {
+        // Chuyển câu hỏi về chữ thường để dễ so sánh
+        let text = inputText.toLowerCase();
+
+        // Quét từng từ khóa trong bộ não xem có khớp với câu hỏi không
+        for (let keyword in botBrain) {
+            if (text.includes(keyword)) {
+                return botBrain[keyword];
+            }
         }
+        
+        // Nếu không có từ khóa nào khớp
+        return "Xin lỗi, vốn từ của tôi còn hạn hẹp. Bạn có thể dạy tôi thêm bằng cách thêm từ khóa vào code không?";
     }
 
-    async function sendMessage() {
-        if (!API_KEY) {
-            alert("Thiếu API Key! Vui lòng tải lại trang (F5) và nhập Key.");
-            return;
-        }
-
+    function sendMessage() {
         const inputField = document.getElementById('user-input');
         const message = inputField.value.trim();
         if (!message) return;
 
+        // In tin nhắn của người dùng
         addMessage(message, 'user-msg');
         inputField.value = '';
 
-        const typingIndicator = addMessage('Đang suy nghĩ...', 'bot-msg');
-
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: message }] }]
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.error) {
-                typingIndicator.innerText = `Lỗi từ Google: ${data.error.message}`;
-                if(data.error.code === 400 || data.error.code === 403) {
-                     localStorage.removeItem("gemini_api_key"); // Xóa key lỗi
-                }
-                return;
-            }
-
-            const botReply = data.candidates[0].content.parts[0].text;
-            typingIndicator.innerText = botReply;
-
-        } catch (error) {
-            typingIndicator.innerText = "Lỗi kết nối mạng hoặc API Key không hợp lệ.";
-        }
+        // Tạo độ trễ nửa giây cho giống người thật đang gõ
+        setTimeout(() => {
+            const reply = getBotResponse(message);
+            addMessage(reply, 'bot-msg');
+        }, 500);
     }
 
     function addMessage(text, className) {
@@ -90,7 +80,6 @@
         msgDiv.innerText = text;
         chatBox.appendChild(msgDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
-        return msgDiv;
     }
 
     function handleKeyPress(event) {
