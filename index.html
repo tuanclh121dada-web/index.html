@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot AI Của Tôi</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        #chat-container { width: 100%; max-width: 500px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
+        #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; line-height: 1.5; font-size: 15px; }
+        .user-msg { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .bot-msg { background-color: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
+        #input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: #fff; }
+        #user-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 15px; }
+        #send-btn { background-color: #007bff; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        #send-btn:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-box">
+        <div class="message bot-msg">Chào bạn! Tôi là trợ lý AI. Mình trò chuyện nhé?</div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Nhập câu hỏi của bạn..." onkeypress="handleKeyPress(event)">
+        <button id="send-btn" onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
+
+<script>
+    // 1. DÁN API KEY CỦA BẠN VÀO ĐÂY (Vẫn giữ nguyên cặp dấu ngoặc kép)
+    const API_KEY = "YOUR_API_KEY_HERE"; 
+
+    async function sendMessage() {
+        const inputField = document.getElementById('user-input');
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        // Hiển thị tin nhắn của người dùng
+        addMessage(message, 'user-msg');
+        inputField.value = '';
+
+        // Hiển thị trạng thái AI đang "suy nghĩ"
+        const typingIndicator = addMessage('Đang trả lời...', 'bot-msg');
+
+        try {
+            // Gửi yêu cầu đến API của Google Gemini bằng JavaScript (fetch)
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: message }] }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                typingIndicator.innerText = `Lỗi: ${data.error.message}`;
+                return;
+            }
+
+            // Lấy câu trả lời và cập nhật lên màn hình
+            const botReply = data.candidates[0].content.parts[0].text;
+            typingIndicator.innerText = botReply;
+
+        } catch (error) {
+            typingIndicator.innerText = "Lỗi kết nối. Vui lòng kiểm tra lại mạng hoặc API Key.";
+        }
+    }
+
+    // Hàm phụ trợ để in bong bóng tin nhắn lên màn hình
+    function addMessage(text, className) {
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${className}`;
+        msgDiv.innerText = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Tự động cuộn xuống cuối
+        return msgDiv;
+    }
+
+    // Gửi tin nhắn khi nhấn phím Enter
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+</script>
+
+</body>
+</html>
