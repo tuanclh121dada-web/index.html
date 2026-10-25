@@ -1,93 +1,890 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Offline Của Tôi</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        #chat-container { width: 100%; max-width: 500px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
-        #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; line-height: 1.5; font-size: 15px; }
-        .user-msg { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .bot-msg { background-color: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
-        #input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: #fff; }
-        #user-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 15px; }
-        #send-btn { background-color: #28a745; color: white; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        #send-btn:hover { background-color: #218838; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSA - Hệ thống luyện thi</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f9;color:#1e293b;font-family:Arial,sans-serif;font-size:14px}
+header{background:linear-gradient(110deg,#7f1d1d,#b91c1c);color:white;padding:20px 12px}
+header .inner,main{max-width:1100px;margin:auto}
+h1{font-size:22px}h2{font-size:18px}
+main{padding:15px}
+.card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:17px;margin-bottom:13px}
+button{border:0;border-radius:8px;padding:11px 14px;cursor:pointer;font-weight:bold;background:#e2e8f0;color:#1e293b;margin:3px}
+button.red{background:#b91c1c;color:white}
+button.gold{background:#fbbf24;color:#451a03}
+button.danger{background:#fee2e2;color:#991b1b}
+button.green{background:#dcfce7;color:#166534}
+input,textarea,select{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:11px;margin:7px 0 13px;font:inherit}
+textarea{min-height:90px}
+label{font-weight:bold}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.muted{color:#64748b;font-size:13px}
+.error{color:#b91c1c}
+.success{color:#15803d}
+.auth{max-width:420px;margin:35px auto}
+.option{display:block;width:100%;text-align:left;border:1px solid #cbd5e1;background:white;margin:8px 0}
+.option.chosen{background:#fff1f2;border:2px solid #b91c1c}
+.numbers{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:15px}
+.numbers button{padding:8px 0;margin:0;font-size:11px}
+.numbers .answered{background:#fecaca}
+.numbers .active{background:#991b1b;color:white}
+hr{border:0;border-top:1px solid #e2e8f0;margin:18px 0}
+table{width:100%;border-collapse:collapse}
+td,th{padding:9px;border-bottom:1px solid #e2e8f0;text-align:left}
+@media(max-width:500px){
+main{padding:10px}
+.card{padding:12px}
+.numbers{grid-template-columns:repeat(8,1fr)}
+h1{font-size:19px}
+}
+</style>
 </head>
 <body>
-
-<div id="chat-container">
-    <div id="chat-box">
-        <div class="message bot-msg">Chào bạn! Tôi là Chatbot Offline. Tôi không dùng mạng và không cần API. Hãy nói gì đó đi!</div>
-    </div>
-    <div id="input-area">
-        <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeypress="handleKeyPress(event)">
-        <button id="send-btn" onclick="sendMessage()">Gửi</button>
-    </div>
+<header>
+<div class="inner">
+<h1>🎓 TSA | HỆ THỐNG LUYỆN THI</h1>
+<div>Đề thi tư duy · Luyện tập · Theo dõi kết quả</div>
+<div id="userbar" style="margin-top:9px"></div>
 </div>
+</header>
+<main id="app"></main>
 
 <script>
-    // BỘ NÃO CỦA AI: Bạn có thể tự thêm vô số từ khóa và câu trả lời vào đây
-    const botBrain = {
-        "chào": "Chào bạn nha! Hôm nay bạn thế nào?",
-        "tên là gì": "Tôi là Chatbot do chính bạn tạo ra chạy bằng JavaScript.",
-        "thời tiết": "Tôi chạy offline nên không xem được thời tiết bên ngoài đâu.",
-        "buồn": "Đừng buồn nhé, nghe một bản nhạc sẽ làm bạn thấy khá hơn đấy.",
-        "ai tạo ra": "Tôi được tạo ra bởi bạn, ngay trên chính tệp HTML này.",
-        "làm gì": "Tôi đang ngồi đây trò chuyện và chờ câu hỏi từ bạn.",
-        "cảm ơn": "Không có gì, rất vui được giúp bạn!",
-        "tạm biệt": "Tạm biệt nhé! Hẹn gặp lại."
-    };
+"use strict";
 
-    function getBotResponse(inputText) {
-        // Chuyển câu hỏi về chữ thường để dễ so sánh
-        let text = inputText.toLowerCase();
+/* CẤU HÌNH */
+const DB_KEY="tsa_web_db_v1";
+const USER_KEY="tsa_web_login_v1";
+const PRICE_SINGLE=20000;
+const PRICE_VIP=80000;
+const VIP_DAYS=30;
 
-        // Quét từng từ khóa trong bộ não xem có khớp với câu hỏi không
-        for (let keyword in botBrain) {
-            if (text.includes(keyword)) {
-                return botBrain[keyword];
-            }
-        }
-        
-        // Nếu không có từ khóa nào khớp
-        return "Xin lỗi, vốn từ của tôi còn hạn hẹp. Bạn có thể dạy tôi thêm bằng cách thêm từ khóa vào code không?";
-    }
+/* DỮ LIỆU MẪU */
+const sample=[
+{
+text:"Giải phương trình x² - 5x + 6 = 0.",
+options:["x = 2 hoặc x = 3","x = 1 hoặc x = 6","x = -2 hoặc x = -3","Vô nghiệm"],
+answer:0,
+explain:"(x - 2)(x - 3) = 0."
+},
+{
+text:"Đạo hàm của f(x) = x³ - 2x² + 5 là:",
+options:["3x² - 4x","3x² - 2x","x² - 4x","3x - 4"],
+answer:0,
+explain:"Đạo hàm từng hạng tử."
+},
+{
+text:"Xác suất tung xúc xắc được số chẵn là:",
+options:["1/3","1/2","2/3","1/6"],
+answer:1,
+explain:"Có 3 số chẵn trong 6 kết quả."
+},
+{
+text:"Giá trị log₂(8) là:",
+options:["2","4","3","8"],
+answer:2,
+explain:"Vì 2³ = 8."
+},
+{
+text:"Một vật chuyển động đều 12 m/s trong 5 giây. Quãng đường là:",
+options:["17 m","24 m","60 m","120 m"],
+answer:2,
+explain:"s = v × t = 60 m."
+}
+];
 
-    function sendMessage() {
-        const inputField = document.getElementById('user-input');
-        const message = inputField.value.trim();
-        if (!message) return;
+function makeQuestions(){
+return Array.from({length:100},(_,i)=>{
+let q=sample[i%sample.length];
+return {
+text:q.text,
+options:[...q.options],
+answer:q.answer,
+explain:q.explain
+};
+});
+}
 
-        // In tin nhắn của người dùng
-        addMessage(message, 'user-msg');
-        inputField.value = '';
+function initialDB(){
+return {
+users:[
+{
+id:"owner",
+name:"Quản trị viên",
+password:"123456",
+role:"owner",
+unlocked:[],
+vipUntil:0
+},
+{
+id:"khach",
+name:"Học sinh",
+password:"123456",
+role:"guest",
+unlocked:[],
+vipUntil:0
+}
+],
+exams:[
+{
+id:"tsa43",
+title:"Đề tổng hợp TSA - Tuần 43/2026",
+minutes:150,
+questions:makeQuestions()
+},
+{
+id:"tsa44",
+title:"Đề luyện TSA - Tuần 44/2026",
+minutes:150,
+questions:makeQuestions()
+}
+],
+history:[]
+};
+}
 
-        // Tạo độ trễ nửa giây cho giống người thật đang gõ
-        setTimeout(() => {
-            const reply = getBotResponse(message);
-            addMessage(reply, 'bot-msg');
-        }, 500);
-    }
+let db;
+try{
+db=JSON.parse(localStorage.getItem(DB_KEY))||initialDB();
+}catch{
+db=initialDB();
+}
 
-    function addMessage(text, className) {
-        const chatBox = document.getElementById('chat-box');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${className}`;
-        msgDiv.innerText = text;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
+if(!Array.isArray(db.users)||!Array.isArray(db.exams)||!Array.isArray(db.history)){
+db=initialDB();
+}
 
-    function handleKeyPress(event) {
-        if (event.key === 'Enter') {
-            sendMessage();
-        }
-    }
-</script>
+let uid=localStorage.getItem(USER_KEY)||"";
+let page="exams";
+let selectedId=null;
+let mode="login";
+let error="";
+let editingQuestion=null;
+let session=null;
+let resultId=null;
 
-</body>
-</html>
+const app=document.getElementById("app");
+
+function save(){
+try{
+localStorage.setItem(DB_KEY,JSON.stringify(db));
+localStorage.setItem(USER_KEY,uid);
+}catch(e){
+alert("Không lưu được dữ liệu trên trình duyệt.");
+}
+}
+
+function me(){
+return db.users.find(u=>u.id===uid);
+}
+
+function selectedExam(){
+return db.exams.find(e=>e.id===selectedId);
+}
+
+function isOwner(){
+return me()?.role==="owner";
+}
+
+function hasVip(){
+return Number(me()?.vipUntil||0)>Date.now();
+}
+
+function canOpen(e){
+return isOwner()||hasVip()||(me()?.unlocked||[]).includes(e.id);
+}
+
+function id(){
+return "id"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+
+function esc(s){
+return String(s??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+}[c]));
+}
+
+function money(n){
+return n.toLocaleString("vi-VN")+"đ";
+}
+
+function date(n){
+return n?new Date(n).toLocaleString("vi-VN"):"—";
+}
+
+function button(text,action,cls="",extra=""){
+return `<button class="${cls}" data-act="${action}" ${extra}>${text}</button>`;
+}
+
+function download(name,text,type="text/plain"){
+const blob=new Blob([text],{type});
+const url=URL.createObjectURL(blob);
+const a=document.createElement("a");
+a.href=url;
+a.download=name;
+document.body.appendChild(a);
+a.click();
+a.remove();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+/* HIỂN THỊ */
+function render(){
+const u=me();
+
+document.getElementById("userbar").innerHTML=u?
+`${esc(u.name)} · ${
+isOwner()?"👑 OWNER":
+hasVip()?"⭐ VIP đến "+date(u.vipUntil):
+"Tài khoản thường"
+}`:"";
+
+if(!u){
+renderAuth();
+return;
+}
+
+const nav=`
+<div class="row" style="margin-bottom:15px">
+${button("📚 Kho đề","go-exams")}
+${button("📊 Lịch sử","go-history")}
+${isOwner()?button("⚙️ Quản trị","go-admin"):""}
+${button("👤 Tài khoản","go-profile")}
+${button("Đăng xuất","logout","danger")}
+</div>`;
+
+let content="";
+
+if(page==="exams")content=renderExams();
+else if(page==="detail")content=renderDetail();
+else if(page==="payment")content=renderPayment();
+else if(page==="room")content=renderRoom();
+else if(page==="result")content=renderResult();
+else if(page==="history")content=renderHistory();
+else if(page==="profile")content=renderProfile();
+else if(page==="admin")content=renderAdmin();
+else if(page==="edit-exam")content=renderEditExam();
+else if(page==="edit-question")content=renderEditQuestion();
+
+app.innerHTML=nav+content;
+}
+
+/* ĐĂNG NHẬP */
+function renderAuth(){
+app.innerHTML=`
+<div class="card auth">
+<h2>${mode==="login"?"Đăng nhập TSA":"Đăng ký tài khoản"}</h2>
+<div class="row">
+${button("Đăng nhập","mode-login")}
+${button("Đăng ký","mode-register")}
+</div>
+<form id="authForm">
+${mode==="register"?`
+<label>Họ và tên</label>
+<input name="name" required>
+`:""}
+<label>Tên tài khoản</label>
+<input name="username" required autocomplete="username">
+<label>Mật khẩu</label>
+<input name="password" type="password" required autocomplete="${mode==="login"?"current-password":"new-password"}">
+<p class="error">${esc(error)}</p>
+<button type="submit" class="red">
+${mode==="login"?"Đăng nhập":"Tạo tài khoản"}
+</button>
+</form>
+<p class="muted">Đăng nhập được ghi nhớ trên thiết bị này.</p>
+</div>`;
+}
+
+/* KHO ĐỀ */
+function renderExams(){
+return `
+<h2>📚 Kho đề TSA</h2>
+<p class="muted">Các đề mặc định chứa câu hỏi minh họa. OWNER có thể thay bằng câu hỏi thật.</p>
+<div class="grid">
+${db.exams.map(e=>`
+<div class="card">
+<h3>${esc(e.title)}</h3>
+<p class="muted">${e.questions.length} câu · ${e.minutes} phút</p>
+<p>${canOpen(e)?"🔓 Đã mở khóa":"🔒 Chưa mở khóa"}</p>
+${button("Xem đề","select","red",`data-id="${esc(e.id)}"`)}
+</div>
+`).join("")}
+</div>`;
+}
+
+function renderDetail(){
+const e=selectedExam();
+if(!e)return `<div class="card">Không tìm thấy đề.</div>`;
+
+return `
+<div class="card">
+${button("← Kho đề","go-exams")}
+<h2>${esc(e.title)}</h2>
+<p>${e.questions.length} câu · ${e.minutes} phút</p>
+${canOpen(e)?`
+<p class="success">✓ Bạn đã có quyền truy cập.</p>
+${button("▶ Bắt đầu thi","start","red")}
+`:
+`
+<p>Đề chưa được mở khóa.</p>
+${button("🔒 Mở khóa 20.000đ","go-payment","gold")}
+`}
+</div>`;
+}
+
+/* THANH TOÁN MÔ PHỎNG */
+function renderPayment(){
+const e=selectedExam();
+if(!e)return "";
+
+return `
+<div class="card">
+<h2>Mở khóa: ${esc(e.title)}</h2>
+<label>
+<input type="radio" name="plan" value="single" checked style="width:auto">
+Mở khóa một đề — ${money(PRICE_SINGLE)}
+</label>
+<br>
+<label>
+<input type="radio" name="plan" value="vip" style="width:auto">
+VIP toàn bộ đề trong 30 ngày — ${money(PRICE_VIP)}
+</label>
+<hr>
+<p><b>Chế độ thử nghiệm — không thu tiền thật.</b></p>
+<p class="muted">Xác nhận chỉ mở quyền trên trình duyệt đang sử dụng.</p>
+${button("Xác nhận mô phỏng","confirm-payment","red")}
+${button("Hủy","go-detail")}
+</div>`;
+}
+
+/* PHÒNG THI */
+function startExam(){
+const e=selectedExam();
+if(!e||!canOpen(e))return;
+if(!e.questions.length){
+alert("Đề này chưa có câu hỏi.");
+return;
+}
+session={
+index:0,
+answers:{},
+deadline:Date.now()+e.minutes*60000
+};
+page="room";
+render();
+}
+
+function formatTime(s){
+return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+
+function renderRoom(){
+const e=selectedExam();
+if(!session||!e)return `<div class="card">Chưa có bài thi.</div>`;
+
+const i=session.index;
+const q=e.questions[i];
+const left=Math.max(0,Math.ceil((session.deadline-Date.now())/1000));
+
+return `
+<div class="card">
+<div class="row between">
+<b>Câu ${i+1}/${e.questions.length}</b>
+<b style="color:#b91c1c">⏱ <span id="timer">${formatTime(left)}</span></b>
+</div>
+<p class="muted">${
+i<40?"Tư duy Toán học":
+i<60?"Tư duy Đọc hiểu":
+"Tư duy Khoa học"
+}</p>
+<h3>${esc(q.text)}</h3>
+${q.options.map((o,j)=>`
+<button class="option ${session.answers[i]===j?"chosen":""}"
+data-act="answer" data-value="${j}">
+<b>${"ABCD"[j]}.</b> ${esc(o)}
+</button>
+`).join("")}
+<hr>
+<div class="row between">
+${button("← Trước","prev")}
+${button("Nộp bài","submit","red")}
+${button("Tiếp →","next")}
+</div>
+<div class="numbers">
+${e.questions.map((_,n)=>`
+<button data-act="jump" data-value="${n}"
+class="${n===i?"active":session.answers[n]!==undefined?"answered":""}">
+${n+1}
+</button>
+`).join("")}
+</div>
+</div>`;
+}
+
+function finishExam(){
+const e=selectedExam();
+if(!e||!session)return;
+
+const details=e.questions.map((q,i)=>({
+text:q.text,
+options:[...q.options],
+answer:q.answer,
+selected:session.answers[i]??null,
+explain:q.explain||""
+}));
+
+const result={
+id:id(),
+userId:uid,
+examId:e.id,
+title:e.title,
+time:Date.now(),
+score:details.filter(x=>x.answer===x.selected).length,
+total:details.length,
+details
+};
+
+db.history.push(result);
+resultId=result.id;
+session=null;
+page="result";
+save();
+render();
+}
+
+function renderResult(){
+const r=db.history.find(x=>x.id===resultId&&x.userId===uid);
+if(!r)return `<div class="card">Không tìm thấy kết quả.</div>`;
+
+return `
+<div class="card">
+<h2>📊 Kết quả bài thi</h2>
+<h1 class="success">${r.score}/${r.total} câu đúng</h1>
+<p>${esc(r.title)}</p>
+<p class="muted">${date(r.time)}</p>
+${button("Tải đáp án TXT","download-answer","green",`data-id="${r.id}"`)}
+${button("Về kho đề","go-exams")}
+<hr>
+<h3>Đáp án và lời giải</h3>
+${r.details.map((q,i)=>`
+<div style="padding:12px 0;border-bottom:1px solid #e2e8f0">
+<b>Câu ${i+1}: ${esc(q.text)}</b>
+<p>Đã chọn: ${q.selected===null?"Bỏ trống":"ABCD"[q.selected]}</p>
+<p class="success">Đáp án đúng: ${"ABCD"[q.answer]}</p>
+<p class="muted">${esc(q.explain)}</p>
+</div>
+`).join("")}
+</div>`;
+}
+
+/* LỊCH SỬ */
+function renderHistory(){
+const list=db.history.filter(x=>x.userId===uid).slice().reverse();
+return `
+<h2>📊 Lịch sử làm bài</h2>
+${list.length?list.map(r=>`
+<div class="card row between">
+<div>
+<b>${esc(r.title)}</b>
+<p class="muted">${date(r.time)}</p>
+<b>${r.score}/${r.total} câu đúng</b>
+</div>
+${button("Xem kết quả","view-result","red",`data-id="${r.id}"`)}
+</div>
+`).join(""):`<div class="card">Bạn chưa làm bài thi nào.</div>`}`;
+}
+
+/* TÀI KHOẢN */
+function renderProfile(){
+const u=me();
+return `
+<div class="card">
+<h2>👤 Tài khoản</h2>
+<p><b>Họ tên:</b> ${esc(u.name)}</p>
+<p><b>Tên đăng nhập:</b> ${esc(u.id)}</p>
+<p><b>Vai trò:</b> ${isOwner()?"OWNER":"Học sinh"}</p>
+<p><b>VIP:</b> ${
+hasVip()?"Có hiệu lực đến "+date(u.vipUntil):"Chưa kích hoạt hoặc đã hết hạn"
+}</p>
+<p><b>Số đề mua lẻ:</b> ${(u.unlocked||[]).length}</p>
+</div>`;
+}
+
+/* QUẢN TRỊ */
+function renderAdmin(){
+if(!isOwner())return `<div class="card">Không có quyền.</div>`;
+
+return `
+<h2>⚙️ Quản trị OWNER</h2>
+<div class="card">
+<div class="row">
+${button("＋ Tạo đề","create-exam","red")}
+${button("Xuất toàn bộ JSON","export-all")}
+${button("Nhập bản sao lưu","import-all")}
+</div>
+<label>Nhập đề từ JSON</label>
+<input id="importExam" type="file" accept=".json,application/json">
+<p class="muted">Chức năng quản trị chỉ lưu trên trình duyệt hiện tại.</p>
+</div>
+
+${db.exams.map(e=>`
+<div class="card">
+<div class="row between">
+<div>
+<b>${esc(e.title)}</b>
+<p class="muted">${e.questions.length} câu · ${e.minutes} phút</p>
+</div>
+<div class="row">
+${button("Sửa đề","edit-exam","",`data-id="${esc(e.id)}"`)}
+${button("Xuất JSON","export-exam","",`data-id="${esc(e.id)}"`)}
+${button("Xóa đề","delete-exam","danger",`data-id="${esc(e.id)}"`)}
+</div>
+</div>
+</div>
+`).join("")}
+
+<div class="card">
+<h3>Danh sách tài khoản trên thiết bị</h3>
+<div style="overflow-x:auto">
+<table>
+<tr><th>Tài khoản</th><th>Họ tên</th><th>Quyền</th><th>VIP đến</th></tr>
+${db.users.map(u=>`
+<tr>
+<td>${esc(u.id)}</td>
+<td>${esc(u.name)}</td>
+<td>${esc(u.role)}</td>
+<td>${date(u.vipUntil)}</td>
+</tr>
+`).join("")}
+</table>
+</div>
+</div>`;
+}
+
+function renderEditExam(){
+if(!isOwner())return "";
+const e=selectedExam();
+if(!e)return "";
+
+return `
+<div class="card">
+${button("← Quản trị","go-admin")}
+<h2>Chỉnh sửa đề</h2>
+<form id="examForm">
+<label>Tên đề</label>
+<input name="title" required value="${esc(e.title)}">
+<label>Thời gian làm bài (phút)</label>
+<input name="minutes" type="number" min="1" max="600" required value="${e.minutes}">
+<button type="submit" class="red">Lưu đề</button>
+</form>
+<hr>
+<div class="row between">
+<h3>Câu hỏi (${e.questions.length})</h3>
+${button("＋ Thêm câu hỏi","add-question","red")}
+</div>
+${e.questions.map((q,i)=>`
+<div style="border-bottom:1px solid #e2e8f0;padding:12px 0">
+<b>Câu ${i+1}: ${esc(q.text)}</b>
+<div class="row">
+${button("Sửa","edit-question","",`data-index="${i}"`)}
+${button("Xóa","delete-question","danger",`data-index="${i}"`)}
+</div>
+</div>
+`).join("")}
+</div>`;
+}
+
+function renderEditQuestion(){
+if(!isOwner())return "";
+const e=selectedExam();
+if(!e)return "";
+
+const q=editingQuestion===null?
+{text:"",options:["","","",""],answer:0,explain:""}:
+e.questions[editingQuestion];
+
+if(!q)return "";
+
+return `
+<div class="card">
+${button("← Quay lại đề","go-edit-exam")}
+<h2>${editingQuestion===null?"Thêm câu hỏi":"Sửa câu hỏi"}</h2>
+<form id="questionForm">
+<label>Nội dung câu hỏi</label>
+<textarea name="text" required>${esc(q.text)}</textarea>
+${q.options.map((o,i)=>`
+<label>Đáp án ${"ABCD"[i]}</label>
+<input name="option${i}" required value="${esc(o)}">
+`).join("")}
+<label>Đáp án đúng</label>
+<select name="answer">
+${[0,1,2,3].map(i=>`
+<option value="${i}" ${q.answer===i?"selected":""}>${"ABCD"[i]}</option>
+`).join("")}
+</select>
+<label>Lời giải</label>
+<textarea name="explain">${esc(q.explain)}</textarea>
+<button type="submit" class="red">Lưu câu hỏi</button>
+</form>
+</div>`;
+}
+
+/* FORM */
+app.addEventListener("submit",ev=>{
+ev.preventDefault();
+const f=ev.target;
+const d=new FormData(f);
+
+if(f.id==="authForm"){
+const username=String(d.get("username")||"").trim().toLowerCase();
+const password=String(d.get("password")||"");
+
+if(mode==="login"){
+const u=db.users.find(x=>x.id===username&&x.password===password);
+if(!u){
+error="Sai tài khoản hoặc mật khẩu.";
+render();
+return;
+}
+uid=u.id;
+}else{
+const name=String(d.get("name")||"").trim();
+
+if(!username||!name||password.length<6){
+error="Điền đầy đủ thông tin. Mật khẩu tối thiểu 6 ký tự.";
+render();
+return;
+}
+if(db.users.some(x=>x.id===username)){
+error="Tên tài khoản đã tồn tại.";
+render();
+return;
+}
+db.users.push({
+id:username,
+name,
+password,
+role:"guest",
+unlocked:[],
+vipUntil:0
+});
+uid=username;
+}
+
+error="";
+page="exams";
+save();
+render();
+return;
+}
+
+if(!isOwner())return;
+
+if(f.id==="examForm"){
+const e=selectedExam();
+if(!e)return;
+e.title=String(d.get("title")||"").trim();
+e.minutes=Number(d.get("minutes"))||150;
+save();
+render();
+}
+
+if(f.id==="questionForm"){
+const e=selectedExam();
+if(!e)return;
+
+const q={
+text:String(d.get("text")||"").trim(),
+options:[0,1,2,3].map(i=>String(d.get("option"+i)||"").trim()),
+answer:Number(d.get("answer")),
+explain:String(d.get("explain")||"").trim()
+};
+
+if(!q.text||q.options.some(x=>!x)){
+alert("Nhập đầy đủ câu hỏi và 4 đáp án.");
+return;
+}
+
+if(editingQuestion===null)e.questions.push(q);
+else e.questions[editingQuestion]=q;
+
+page="edit-exam";
+save();
+render();
+}
+});
+
+/* NHẬP ĐỀ JSON */
+app.addEventListener("change",async ev=>{
+if(ev.target.id!=="importExam"||!isOwner())return;
+const file=ev.target.files?.[0];
+if(!file)return;
+
+try{
+const raw=JSON.parse(await file.text());
+const items=Array.isArray(raw)?raw:[raw];
+
+if(!items.length)throw Error("Tệp rỗng.");
+
+for(const e of items){
+if(typeof e.title!=="string"||!Array.isArray(e.questions)){
+throw Error("Sai cấu trúc đề.");
+}
+if(!e.questions.every(q=>
+typeof q.text==="string"&&
+Array.isArray(q.options)&&
+q.options.length===4&&
+q.options.every(x=>typeof x==="string")&&
+Number.isInteger(q.answer)&&
+q.answer>=0&&q.answer<=3
+)){
+throw Error("Câu hỏi không hợp lệ.");
+}
+}
+
+for(const e of items){
+db.exams.push({
+id:id(),
+title:e.title,
+minutes:Number(e.minutes)||150,
+questions:e.questions.map(q=>({
+text:q.text,
+options:[...q.options],
+answer:q.answer,
+explain:String(q.explain||"")
+}))
+});
+}
+
+save();
+render();
+alert("Đã nhập đề thành công.");
+}catch(err){
+alert("Không thể nhập đề: "+err.message);
+}
+});
+
+/* NÚT BẤM */
+app.addEventListener("click",ev=>{
+const b=ev.target.closest("button[data-act]");
+if(!b)return;
+
+const a=b.dataset.act;
+const value=b.dataset.value;
+const itemId=b.dataset.id;
+
+if(a==="mode-login"||a==="mode-register"){
+mode=a==="mode-login"?"login":"register";
+error="";
+render();
+return;
+}
+
+if(a==="logout"){
+uid="";
+session=null;
+page="exams";
+save();
+render();
+return;
+}
+
+if(!me())return;
+
+if(a.startsWith("go-")){
+const dest=a.slice(3);
+if(dest==="admin"&&!isOwner())return;
+page=dest;
+render();
+return;
+}
+
+if(a==="select"){
+selectedId=itemId;
+page="detail";
+}
+
+else if(a==="confirm-payment"){
+const plan=app.querySelector('input[name="plan"]:checked')?.value;
+const u=me();
+const e=selectedExam();
+if(!e)return;
+
+if(plan==="vip"){
+u.vipUntil=Math.max(Date.now(),Number(u.vipUntil)||0)+VIP_DAYS*86400000;
+}else{
+if(!Array.isArray(u.unlocked))u.unlocked=[];
+if(!u.unlocked.includes(e.id))u.unlocked.push(e.id);
+}
+page="detail";
+save();
+}
+
+else if(a==="start"){
+startExam();
+return;
+}
+
+else if(a==="answer"&&session){
+session.answers[session.index]=Number(value);
+}
+
+else if(a==="jump"&&session){
+session.index=Number(value);
+}
+
+else if(a==="prev"&&session){
+session.index=Math.max(0,session.index-1);
+}
+
+else if(a==="next"&&session){
+session.index=Math.min(selectedExam().questions.length-1,session.index+1);
+}
+
+else if(a==="submit"&&session){
+if(confirm("Bạn chắc chắn muốn nộp bài?")){
+finishExam();
+return;
+}
+}
+
+else if(a==="view-result"){
+resultId=itemId;
+page="result";
+}
+
+else if(a==="download-answer"){
+const r=db.history.find(x=>x.id===itemId&&x.userId===uid);
+if(!r)return;
+const text=[
+r.title,
+"Điểm: "+r.score+"/"+r.total,
+"",
+...r.details.map((q,i)=>
+`Câu ${i+1}: ${q.text}
+Đáp án đúng: ${"ABCD"[q.answer]}
+Bạn chọn: ${q.selected===null?"Bỏ trống":"ABCD"[q.selected]}
+Lời giải: ${q.explain}
+`)
+].join("\n");
+download("dap-an-tsa.txt",text);
+return;
+}
+
+else if(isOwner()){
+
+if(a==="create-exam"){
+const e={
+id:id(),
+title:"Đề TSA mới",
