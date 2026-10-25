@@ -800,4 +800,11 @@ if(!storageOK){
 showNotice('Trình duyệt đang chặn lưu dữ liệu. Bạn có thể thử đăng nhập nhưng dữ liệu có thể không được ghi nhớ.');
 }
 }catch(e){
-showNotice(
+showNotice('Lỗi khởi động: '+e.message);
+$('app').innerHTML='<div class="card">Ứng dụng chưa thể khởi động. Vui lòng chụp thông báo lỗi ở phía trên.</div>';
+}
+
+})();
+</script>
+</body>
+</html>
